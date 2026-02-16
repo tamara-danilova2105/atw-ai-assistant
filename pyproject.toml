@@ -1,0 +1,28 @@
+[project]
+name = "atw-ai-assistant"
+version = "0.1.0"
+description = "AI assistant service for tours"
+authors = [
+    {name = "tamara-danilova2105", email = "sap1028@mail.ru"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi (>=0.129.0,<0.130.0)",
+    "uvicorn (>=0.40.0,<0.41.0)",
+    "pydantic-settings (>=2.13.0,<3.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "ruff (>=0.15.1,<0.16.0)",
+    "mypy (>=1.19.1,<2.0.0)"
+]
+
