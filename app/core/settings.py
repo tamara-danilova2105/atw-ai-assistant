@@ -1,9 +1,9 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 # Здесь описываем все настройки приложения, которые можно конфигурировать через переменные окружения или .env файл.
 class Settings(BaseSettings):
-    
-    # model_config - это новый способ в pydantic v2 задавать конфигурацию модели. 
+    # model_config - это новый способ в pydantic v2 задавать конфигурацию модели.
     # Здесь мы указываем, что настройки можно загружать из .env файла и что он в кодировке utf-8.
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

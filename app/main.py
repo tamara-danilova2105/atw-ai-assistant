@@ -1,21 +1,23 @@
-from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from fastapi import FastAPI
+
 from app.api.routes import router as api_router
+from app.core.errors import register_exception_handlers
+from app.core.http import register_http_middleware
 from app.core.logging import configure_logging, get_logger
 from app.core.settings import settings
-from app.core.http import register_http_middleware
-from app.core.errors import register_exception_handlers
 
 # Инициализация логирования. Это нужно делать до всего остального, чтобы все логи были в нужном формате и с нужными полями.
 configure_logging()
 log = get_logger()
 
+
 # функция, которая описывает жизненный цикл приложения, которая будет вызываться при запуске и остановке приложения
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # startup - приложение запускается
-    # здесь можно выполнять любые действия, которые нужны при запуске приложения, 
+    # здесь можно выполнять любые действия, которые нужны при запуске приложения,
     # например, подключаться к базе данных, инициализировать какие-то ресурсы и т.д.
     log.info(
         "app_start",
@@ -28,6 +30,7 @@ async def lifespan(app: FastAPI):
 
     # shutdown - приложение останавливается
     log.info("app_shutdown")
+
 
 # функция для создания экземпляра FastAPI приложения, которая будет использоваться в main.py для запуска приложения
 def create_app() -> FastAPI:
@@ -48,4 +51,3 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-

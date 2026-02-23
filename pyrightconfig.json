@@ -1,0 +1,7 @@
+{
+  "include": ["app"],
+  "exclude": ["**/__pycache__", ".venv", "build", "dist"],
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "none",
+  "reportMissingTypeStubs": "none"
+}

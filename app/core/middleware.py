@@ -1,21 +1,21 @@
 import time
 import uuid
 
+import structlog
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
-import structlog
 
 from app.core.settings import settings
 
-
 log = structlog.get_logger()
+
 
 # Здесь описаны middleware для FastAPI приложения, которые будут обрабатывать HTTP запросы.
 # В данном случае это middleware для генерации и передачи request_id, а также middleware для лог
 class RequestIdMiddleware(BaseHTTPMiddleware):
     # request_id_middleware - это middleware, который генерирует уникальный request_id для каждого HTTP запроса,
-    # который может быть передан в заголовке X-Request-ID. Если заголовка нет, то генерируется новый request_id с помощью uuid4. 
+    # который может быть передан в заголовке X-Request-ID. Если заголовка нет, то генерируется новый request_id с помощью uuid4.
     # Этот request_id затем добавляется в contextvars,
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
@@ -28,7 +28,8 @@ class RequestIdMiddleware(BaseHTTPMiddleware):
         response.headers["X-Request-ID"] = request_id
         return response
 
-# access_log_middleware - это middleware, который логирует каждый HTTP запрос с его методом, путем, статус кодом 
+
+# access_log_middleware - это middleware, который логирует каждый HTTP запрос с его методом, путем, статус кодом
 # и временем обработки запроса (latency). Это поможет нам анализировать производительность нашего приложения
 class AccessLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
