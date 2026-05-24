@@ -49,15 +49,6 @@ poetry run uvicorn app.main:app --reload
 http://127.0.0.1:8000
 ```
 
----
-
-## Проверка работы
-
-Health endpoint:
-
-```
-http://127.0.0.1:8000/api/health
-```
 
 Swagger UI:
 

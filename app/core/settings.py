@@ -14,5 +14,8 @@ class Settings(BaseSettings):
     # Включать/выключать логирование запросов (если надо будет глушить в нагрузке)
     log_requests: bool = True
 
+    mongo_uri: str = ""
+    mongo_db: str = ""
+
 
 settings = Settings()

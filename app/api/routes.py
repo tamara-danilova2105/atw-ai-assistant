@@ -1,10 +1,7 @@
-import structlog
 from fastapi import APIRouter
 
+from app.modules.tour_catalog.router import router as tour_catalog_router
+
 router = APIRouter()
-log = structlog.get_logger()
 
-
-@router.get("/health")
-async def health():
-    return {"status": "ok"}
+router.include_router(tour_catalog_router)
