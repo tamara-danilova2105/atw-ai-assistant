@@ -1,6 +1,8 @@
+import re
 from datetime import UTC, datetime
 
 MS_IN_DAY = 86400000
+FROM_TOUR_DATES = "tourdates"
 
 EXCHANGE_RATES = [
     {
@@ -23,18 +25,20 @@ def build_tours_pipeline(
     sort: dict,
     page: int,
     limit: int | None,
+    admin: bool = False,
 ):
     now = datetime.now(UTC)
 
-    pipeline = [
+    pipeline: list[dict] = [
         {
-            "$match": {
-                "isPublished": True,
-            }
+            "$match": build_match_stage(
+                filters=filters,
+                admin=admin,
+            )
         },
         {
             "$lookup": {
-                "from": "tourdates",
+                "from": FROM_TOUR_DATES,
                 "localField": "_id",
                 "foreignField": "tourId",
                 "as": "dates",
@@ -50,20 +54,21 @@ def build_tours_pipeline(
         {
             "$unwind": {
                 "path": "$dates",
-                "preserveNullAndEmptyArrays": False,
-            }
-        },
-        {
-            "$match": {
-                "dates.date_start": {
-                    "$gte": now,
-                },
-                "dates.status": {
-                    "$ne": "canceled",
-                },
+                "preserveNullAndEmptyArrays": admin,
             }
         },
     ]
+
+    if not admin:
+        pipeline.append(
+            {
+                "$match": {
+                    "dates.date_start": {
+                        "$gte": now,
+                    }
+                }
+            }
+        )
 
     apply_date_range_filter(
         pipeline=pipeline,
@@ -82,118 +87,141 @@ def build_tours_pipeline(
         filters=filters,
     )
 
-    pipeline.extend(
-        [
-            {
-                "$sort": {
-                    "dates.date_start": 1,
+    pipeline.append(
+        {
+            "$sort": {
+                "dates.date_start": 1,
+            }
+        }
+    )
+
+    pipeline.append(
+        {
+            "$group": {
+                "_id": "$_id",
+                "tour": {
+                    "$first": "$tour",
+                },
+                "slug": {
+                    "$first": "$slug",
+                },
+                "cover": {
+                    "$first": "$cover",
+                },
+                "discount": {
+                    "$first": "$discount",
+                },
+                "regions": {
+                    "$first": "$regions",
+                },
+                "createdAt": {
+                    "$first": "$createdAt",
+                },
+                "isPublished": {
+                    "$first": "$isPublished",
+                },
+                "dates": {
+                    "$push": "$dates",
+                },
+                "minDatePriceUsd": {
+                    "$min": "$datePriceUsd",
+                },
+                "maxDateDiscount": {
+                    "$max": {
+                        "$cond": [
+                            {
+                                "$gt": [
+                                    {
+                                        "$ifNull": [
+                                            "$dates.price.discount",
+                                            0,
+                                        ]
+                                    },
+                                    0,
+                                ]
+                            },
+                            "$dates.price.discount",
+                            0,
+                        ]
+                    }
+                },
+            }
+        }
+    )
+
+    pipeline.append(
+        {
+            "$addFields": {
+                "dates": {
+                    "$filter": {
+                        "input": "$dates",
+                        "as": "d",
+                        "cond": {
+                            "$ne": ["$$d", None],
+                        },
+                    }
                 }
-            },
-            {
-                "$group": {
-                    "_id": "$_id",
-                    "tour": {
-                        "$first": "$tour",
-                    },
-                    "slug": {
-                        "$first": "$slug",
-                    },
-                    "cover": {
-                        "$first": "$cover",
-                    },
-                    "discount": {
-                        "$first": "$discount",
-                    },
-                    "regions": {
-                        "$first": "$regions",
-                    },
-                    "createdAt": {
-                        "$first": "$createdAt",
-                    },
-                    "isPublished": {
-                        "$first": "$isPublished",
-                    },
-                    "dates": {
-                        "$push": "$dates",
-                    },
-                    "minDatePriceUsd": {
-                        "$min": "$datePriceUsd",
-                    },
-                    "maxDateDiscount": {
-                        "$max": {
-                            "$cond": [
+            }
+        }
+    )
+
+    pipeline.append(
+        {
+            "$addFields": {
+                "validEarlyDiscount": {
+                    "$cond": [
+                        {
+                            "$and": [
+                                {
+                                    "$eq": [
+                                        "$discount.enabled",
+                                        True,
+                                    ]
+                                },
+                                {
+                                    "$gt": [
+                                        "$discount.endDate",
+                                        now,
+                                    ]
+                                },
                                 {
                                     "$gt": [
                                         {
                                             "$ifNull": [
-                                                "$dates.price.discount",
+                                                "$discount.percentage",
                                                 0,
                                             ]
                                         },
                                         0,
                                     ]
                                 },
-                                "$dates.price.discount",
-                                0,
                             ]
-                        }
-                    },
+                        },
+                        "$discount.percentage",
+                        0,
+                    ]
                 }
-            },
-            {
-                "$addFields": {
-                    "validEarlyDiscount": {
-                        "$cond": [
-                            {
-                                "$and": [
-                                    {
-                                        "$eq": [
-                                            "$discount.enabled",
-                                            True,
-                                        ]
-                                    },
-                                    {
-                                        "$gt": [
-                                            "$discount.endDate",
-                                            now,
-                                        ]
-                                    },
-                                    {
-                                        "$gt": [
-                                            {
-                                                "$ifNull": [
-                                                    "$discount.percentage",
-                                                    0,
-                                                ]
-                                            },
-                                            0,
-                                        ]
-                                    },
-                                ]
-                            },
-                            "$discount.percentage",
-                            0,
-                        ]
-                    }
-                }
-            },
-            {
-                "$addFields": {
-                    "hasEarlyDiscount": {
-                        "$gt": [
-                            "$validEarlyDiscount",
-                            0,
-                        ]
-                    },
-                    "hasDateDiscount": {
-                        "$gt": [
-                            "$maxDateDiscount",
-                            0,
-                        ]
-                    },
-                }
-            },
-        ]
+            }
+        }
+    )
+
+    pipeline.append(
+        {
+            "$addFields": {
+                "hasEarlyDiscount": {
+                    "$gt": [
+                        "$validEarlyDiscount",
+                        0,
+                    ]
+                },
+                "hasDateDiscount": {
+                    "$gt": [
+                        "$maxDateDiscount",
+                        0,
+                    ]
+                },
+            }
+        }
     )
 
     apply_discount_filter(
@@ -255,6 +283,46 @@ def build_tours_pipeline(
         )
 
     return pipeline
+
+
+def build_match_stage(
+    filters: dict,
+    admin: bool = False,
+) -> dict:
+    match: dict = {}
+
+    if not admin:
+        match["isPublished"] = True
+
+    type_tour = filters.get("type_tour") or {}
+
+    if isinstance(type_tour, dict):
+        types = [key for key, enabled in type_tour.items() if enabled]
+
+        if types:
+            match["types"] = {
+                "$in": types,
+            }
+
+    regions = filters.get("region")
+
+    if isinstance(regions, list) and regions:
+        match["regions"] = {
+            "$in": [
+                re.compile(
+                    f"^{re.escape(region)}$",
+                    re.IGNORECASE,
+                )
+                for region in regions
+            ]
+        }
+
+    direction = filters.get("direction")
+
+    if direction:
+        match["direction"] = direction
+
+    return match
 
 
 def apply_date_range_filter(

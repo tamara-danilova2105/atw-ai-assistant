@@ -1,11 +1,27 @@
 from pydantic import BaseModel, Field
 
 
+# типы для адаптера
+class CatalogDateRange(BaseModel):
+    startDate: str
+    endDate: str
+
+
+class CatalogFilters(BaseModel):
+    type_tour: dict = Field(default_factory=dict)
+    discount: dict = Field(default_factory=dict)
+    duration: list[int] | None = None
+    price: list[int] | None = None
+    region: list[str] | None = None
+    dates: CatalogDateRange | None = None
+
+
 # объект запроса, который API извлекает из сообщения пользователя
 class SearchFilters(BaseModel):
     region: str | None = None
     direction: str | None = None
     month: int | None = None
+    year: int | None = None
     max_price: int | None = None
     days_count: int | None = None
     activity: str | None = None
@@ -24,6 +40,21 @@ class MatchedTour(BaseModel):
     title: str
     slug: str
     reason: str | None = None
+
+
+class CatalogTourItem(BaseModel):
+    id: str | None = None
+    _id: str | None = None
+    title: str | None = None
+    tour: str | None = None
+    slug: str | None = None
+
+
+class CatalogToursResponse(BaseModel):
+    tours: list[CatalogTourItem] = Field(default_factory=list)
+    allTours: int = 0
+    currentPage: int = 1
+    totalPages: int = 1
 
 
 class ConsultationResponse(BaseModel):
