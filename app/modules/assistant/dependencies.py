@@ -1,5 +1,6 @@
 from app.modules.assistant.assistant_service import AssistantService
 from app.modules.assistant.filter_extractor import FilterExtractor
+from app.modules.assistant.tour_context_builder import TourContextBuilder
 from app.modules.assistant.tour_search_adapter import AssistantTourSearchAdapter
 from app.modules.tour_catalog.repository import TourCatalogRepository
 from app.modules.tour_catalog.service import TourCatalogService
@@ -17,8 +18,10 @@ def get_assistant_service() -> AssistantService:
     )
 
     filter_extractor = FilterExtractor()
+    tour_context_builder = TourContextBuilder()
 
     return AssistantService(
         filter_extractor=filter_extractor,
         tour_search_adapter=tour_search_adapter,
+        tour_context_builder=tour_context_builder,
     )

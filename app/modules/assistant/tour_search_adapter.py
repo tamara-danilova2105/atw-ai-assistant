@@ -7,26 +7,51 @@ from app.modules.assistant.schemas import (
     CatalogToursResponse,
     SearchFilters,
 )
-from app.modules.tour_catalog.service import TourCatalogService
+from app.modules.tour_catalog.schemas.tour_detail import (
+    TourDetailsSchema,
+)
+from app.modules.tour_catalog.service import (
+    TourCatalogService,
+)
 
 
 class AssistantTourSearchAdapter:
-    def __init__(self, tour_catalog_service: TourCatalogService):
+    def __init__(
+        self,
+        tour_catalog_service: TourCatalogService,
+    ):
         self.tour_catalog_service = tour_catalog_service
 
-    def search(self, filters: SearchFilters) -> CatalogToursResponse:
+    def search(
+        self,
+        filters: SearchFilters,
+    ) -> CatalogToursResponse:
         catalog_filters = self.to_catalog_filters(filters)
 
         response = self.tour_catalog_service.get_tours(
-            filters=catalog_filters.model_dump(exclude_none=True),
+            filters=catalog_filters.model_dump(
+                exclude_none=True,
+            ),
             sort={},
             page=1,
             limit=5,
         )
 
-        parsed_response = CatalogToursResponse.model_validate(response)
+        return CatalogToursResponse.model_validate(
+            response,
+        )
 
-        return parsed_response
+    def get_tour_by_id(
+        self,
+        tour_id: str,
+    ) -> TourDetailsSchema:
+        response = self.tour_catalog_service.get_tour(
+            tour_id,
+        )
+
+        return TourDetailsSchema.model_validate(
+            response,
+        )
 
     def to_catalog_filters(
         self,
@@ -35,10 +60,15 @@ class AssistantTourSearchAdapter:
         catalog_filters = CatalogFilters()
 
         if filters.region:
-            catalog_filters.region = [filters.region]
+            catalog_filters.region = [
+                filters.region,
+            ]
 
         if filters.max_price:
-            catalog_filters.price = [0, filters.max_price]
+            catalog_filters.price = [
+                0,
+                filters.max_price,
+            ]
 
         if filters.days_count:
             catalog_filters.duration = [
@@ -60,9 +90,21 @@ class AssistantTourSearchAdapter:
         year: int | None = None,
     ) -> CatalogDateRange:
         target_year = year or date.today().year
-        _, last_day = monthrange(target_year, month)
+
+        _, last_day = monthrange(
+            target_year,
+            month,
+        )
 
         return CatalogDateRange(
-            startDate=date(target_year, month, 1).isoformat(),
-            endDate=date(target_year, month, last_day).isoformat(),
+            startDate=date(
+                target_year,
+                month,
+                1,
+            ).isoformat(),
+            endDate=date(
+                target_year,
+                month,
+                last_day,
+            ).isoformat(),
         )

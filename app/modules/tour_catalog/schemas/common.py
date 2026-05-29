@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -22,3 +23,9 @@ class PriceSchema(MongoBaseModel):
     amount: float
     discount: float | None = None
     currency: Currency
+
+
+class DiscountSchema(MongoBaseModel):
+    enabled: bool = False
+    endDate: datetime
+    percentage: int = Field(ge=0, le=100)

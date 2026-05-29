@@ -1,8 +1,8 @@
 from typing import Annotated
 
-from app.modules.assistant.service import AssistantService
 from fastapi import APIRouter, Depends
 
+from app.modules.assistant.assistant_service import AssistantService
 from app.modules.assistant.dependencies import get_assistant_service
 from app.modules.assistant.schemas import ConsultationRequest, ConsultationResponse
 
